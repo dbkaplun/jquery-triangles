@@ -1,0 +1,20 @@
+.triangle {
+    width: 0;
+    height: 0;
+    line-height: 0;
+    border: 0 solid transparent;
+    position: absolute;
+
+    /* sensible defaults */
+    border-width: 0 100px 173.2px;
+    border-bottom-color: red;
+
+    /* for IE6+ */
+    _border-color: #000000 #000000 red #000000;
+    _filter: progid:DXImageTransform.Microsoft.Chroma(color='#000000');
+}
+.triangle-top, .triangle-left, .triangle-right {}
+.triangle-middle {
+    transform: rotate(180deg);
+    _filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2); /* IE6+ */
+}
