@@ -11,102 +11,55 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <link rel="stylesheet" href="jquery-triangles.css">
-        <style>#triangle-container { position: relative; }</style>
+        <style>
+.example { position: relative; }
+#example-1 .triangle { opacity: .5; }
+#example-1 .triangle:hover { opacity: 1; }
+#example-2 .triangle { border-bottom-color: rgba(0, 255, 0, .2); }
+        </style>
     </head>
     <body>
       <h1>jQuery Triangles</h1>
-      <div id="triangle-container"></div>
+      <h2>Examples</h2>
+      <h3>Paths <small id="path"></small></h3>
+      <div id="example-1" class="example"></div>
+      <h3>Less division towards center</h3>
+      <div id="example-2" class="example"></div>
 
       <script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
       <script src="jquery-triangles.js"></script>
       <script>
-(function (factory) {
-  if (typeof define === 'function' && define.amd) {
-    define(['jquery'], factory);
-  } else if (typeof exports === 'object') {
-    module.exports = factory(require('jquery'));
-  } else {
-    factory(jQuery);
-  }
-}(function ($) {
-  var SQRT_3 = Math.sqrt(3);
+var SQRT_3 = Math.sqrt(3);
 
-  $.fn.triangleHierarchy = function () {
-    return $.map(this.add(this.parents('.triangle')).get().reverse(), function (ancestor) {
-      return (($(ancestor).attr('class') || '').match(
-        /(^| )triangle-(top|left|middle|right)( |$)/) || [])[2] || 'middle';
-    });
-  }
+// example 1
+jQuery(function ($) {
+  $('<div>')
+    .appendTo('#example-1')
+    .triangle({width: 500})
+    .triangle('divide', 6);
 
-  function distance (p) {
-    return Math.sqrt(p.x*p.x + p.y*p.y);
-  }
-
-  /*
-  03:38 <PlanckWalk> secrettriangle: Imagine you start with a triangle of unit side length
-  03:39 <PlanckWalk> On the first subdivision, the smaller triangles have side length 1/2
-  03:42 <PlanckWalk> sqrt(3)/6 distance from the center of the middle triangle
-  03:44 <secrettriangle> I see that the "height" of each inner triangle is sqrt(3)/4, but I don't see how to continue that line into the center
-  03:45 <PlanckWalk> secrettriangle: The center of each triangle is 1/3 of the way from the base to the point.
-  03:46 <PlanckWalk> It's true of any triangle centroid
-  03:47 <PlanckWalk> So the distance between two triangles sharing a common base is 2/3 their height.
-  03:49 <PlanckWalk> secrettriangle: So the (first) top triangle center is offset by sqrt(3)/6 in the y direction // sqrt(3)/6 = sqrt(3)/(2*3) = 1/(2sqrt(3))
-  03:50 <PlanckWalk> The right triangle center is at (1/4, sqrt(3)/12), and (-1/4, sqrt(3)/12) for the left
-  03:59 <secrettriangle> OK so given the distance from a smaller triangle's center to its parent's center, how would I get the distance from the smaller triangle's center to its grandparent's center?
-  04:02 <PlanckWalk> secrettriangle: Calculate the offset to the parent, add the parent's offset from the grandparent.
-  04:03 <PlanckWalk> So you can start with offset (0,0), and "flipped" flag false.
-  04:05 <PlanckWalk> Look at the 1st entry in your subdivision list.  Add the corresponding offset for the current side length.  If it was middle, set the "flipped" flag for future calculations, and proceed to the next entry.
-  04:06 <PlanckWalk> Keep halving the side length, negating the offsets if flipped, and flipping the "flipped" flag if the subdivision was a middle triangle.
-  */
-  function pos (hier) {
-    // maximal distance is 2/SQRT_3
-    //   = top, top, top, ...
-    //   = right, right, right, ...
-    //   = left, left, left, ...
-
-    var o = 1; // orientation -- either 1 or -1
-    var p = {x: 0, y: 0};
-    $.each(hier, function (i, side) {
-      var l = Math.pow(2, -i); // side length
-      switch (side) {
-        case 'middle':
-          if (i) o *= -1;
-          break;
-        case 'top':
-          p.y += o*l/SQRT_3;
-          break;
-        case 'left': case 'right':
-          p.x += o*l*{left: -1, right: 1}[side]/2;
-          p.y -= o*l/(2*SQRT_3);
-          break;
-      }
-    });
-    return p;
-  }
-
-  function dist (hier) { return distance(pos(hier)); }
-
-  function preferOuter (el) {
-    var h = $(el).triangleHierarchy();
-    var d = dist(h);
-    return h.length <= 3*(d+1);
-  }
-
-  jQuery(function ($) {
-    $('<div>').appendTo('#triangle-container').triangle({
-      width: 500,
-      color: function (el) {
-        var byte = $.randomByte();
-        return 'rgb('+[
-          ((1-dist($(el).triangleHierarchy()))*256)|0,
-          255,
-          64
-        ].join(',')+')';
-      },
-      divide: preferOuter
-    });
+  var $path = $('#path');
+  $(document).on('mouseover', '*', function (evt) {
+    var $this = $(this);
+    if ($this.is('#example-1 .triangle')) {
+      $path.text($this.triangle('path').map(function (p) { return p.side; }).join(" > "));
+      evt.stopPropagation();
+    } else {
+      $path.text("");
+    }
   });
-}));
+});
+
+// example 2
+jQuery(function ($) {
+  function distance (p) { return Math.sqrt(p.x*p.x + p.y*p.y); }
+  function preferOuter (t) { return t.path().length <= 9*distance(t.pos()) + 1; }
+  $('<div>')
+    .appendTo('#example-2')
+    .triangle({width: 500, color: null})
+    .triangle('divide', preferOuter)
+    .css({borderBottomColor: 'black'});
+});
       </script>
     </body>
 </html>
